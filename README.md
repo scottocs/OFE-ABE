@@ -17,7 +17,7 @@ Bob.py: the player Bob
     2. run "python3 Alice.py 100" and "python3 Bob.py 100" in each terminal.
     3. accomplish the exchange protocol step by step.
     4. result:
-    ![alt text](https://raw.githubusercontent.com/scottocs/OFE-ABE/main/demo.gif)
+    ![Demo](./demo.gif)
 
 ## Note
 All codes provided in this github are a proof of concept implementation of optimistic fair exchange protocol and are not audited for implmentation bugs. Use with caution.
