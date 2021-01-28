@@ -12,12 +12,12 @@ Bob.py: the player Bob
     3). gmpy2
     
 
-## Test example (100 arbiters):
+## Test case (with 100 arbiters):
 	1. open two terminal windows.
     2. run "python3 Alice.py 100" and "python3 Bob.py 100" in each terminal.
     3. accomplish the exchange protocol step by step.
     4. result:
-    ![image](https://github.com/scottocs/OFE-ABE/blob/main/demo.gif?raw=true)
+    ![alt text](https://github.com/scottocs/OFE-ABE/blob/main/demo.gif?raw=true)
 
 ## Note
-All codes provided in this github are a proof of concept optimistic fair exchnage implementation and are not audited for implmentation bugs. Use with caution.
+All codes provided in this github are a proof of concept implementation of optimistic fair exchange protocol and are not audited for implmentation bugs. Use with caution.
