@@ -4,7 +4,7 @@ access structure as a binary tree. This could also support matrices for represen
 '''
 from charm.core.math.pairing import ZR
 from charm.toolbox.pairinggroup import *
-from newpolicytree import *
+from .newpolicytree import *
 import sys
 
 class Utils:

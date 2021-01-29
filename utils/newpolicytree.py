@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 from pyparsing import *
-from newnode import *
+from .newnode import *
 import string
 
 

@@ -1,11 +1,11 @@
 # coding=utf-8
 
 from charm.toolbox.pairinggroup import *
-from newsecretutils import Utils
+from utils.newsecretutils import Utils
 from charm.toolbox.ABEncMultiAuth import ABEncMultiAuth
 import re
 # from newjson import ElementEncoder, ElementDecoder
-import newjson
+import utils.newjson as newjson
 import queue
 import time
 import threading
