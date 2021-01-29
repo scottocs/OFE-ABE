@@ -5,6 +5,8 @@ Alice.py: the player Alice
 
 Bob.py: the player Bob
 
+ExternalUser.py: an external user (optional) who can verify all public information
+
 
 ## Prerequisition:
     1). pbc, gmp

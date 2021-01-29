@@ -246,6 +246,10 @@ class Dabe(ABEncMultiAuth):
     
         h_gid = self.group.hash(sk['gid'],G1)  #find H(GID)
         egg_s = 1
+        # print(type(pruned))
+        if str(type(pruned)) == "<class 'bool'>" :
+            return None
+
         for i in pruned:
             x = i.getAttributeAndIndex()
             y = i.getAttribute()
