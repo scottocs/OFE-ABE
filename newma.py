@@ -101,9 +101,17 @@ class Dabe(ABEncMultiAuth):
         stilde = (sp - s*cp)# %curve_order  # for egg
         M1 = Mp/(M**cp)
         
+        # γ(M)-> Z_p^2
+        Mpv=eval(str(Mp))[0]
+        Mv=eval(str(M))[0]
+
+        Mpv=eval(str(Mp))[1]
+        Mv=eval(str(M))[1]
+
         from gmpy2 import c_mod, mpz,mul
-        Mpv=mpz(eval(str(Mp))[0])*mpz(eval(str(Mp))[1])
-        Mv=mpz(eval(str(M))[0])*mpz(eval(str(M))[1])
+        # γ(M)-> Z_p^1
+        # Mpv=mpz(eval(str(Mp))[0])*mpz(eval(str(Mp))[1])
+        # Mv=mpz(eval(str(M))[0])*mpz(eval(str(M))[1])
         
         D=gp['g']**eval(str(Mv))
         # print(D, (gp['g']**eval(str(M))[0]) ** eval(str(M))[1])
@@ -119,7 +127,7 @@ class Dabe(ABEncMultiAuth):
         # res["C0"].append(asserttime["C0"])
         # t1=time.time()
         # print(Dp, gp['g']** M2, D** cp2)
-        # assert(Dp == (gp['g']** M2) * (D** cp2))
+        assert(Dp == (gp['g']** M2) * (D** cp2))
         # print("assert passed")
         # asserttime["D"] = time.time() - t1
         # res["D"].append(asserttime["D"])
@@ -377,7 +385,7 @@ def main(n,res={"C0":[],"C1":[],"C2":[],"C3":[],"D":[]}):
     # print("decryption time",time.time()-ts)
 
     assert m == orig_m, 'FAILED Decryption!!!'
-    # print('Successful Decryption!')
+    print('Successful Decryption!')
     return 
 
 if __name__ == '__main__':
