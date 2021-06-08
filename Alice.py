@@ -31,8 +31,8 @@ class Alice:
 
     def send_ciphertext(self):
         m = self.groupObj.random(GT)
-        nattributes = ["ATTR"+str(j) for j in range(1, self.n+1)]
-        policy = '(2 of (%d of (%s), ALICE, BOB))' % (self.n/2+1, ", ".join(nattributes))
+        nattributes = ["ATTR@AUTH"+str(j) for j in range(1, self.n+1)]
+        policy = '(2 of (%d of (%s), ATTR@ALICE, ATTR@BOB))' % (self.n/2+1, ", ".join(nattributes))
         # print(policy)
         # print('Acces Control Policy: %s' % policy)
         print("There are %d TTPs" % self.n)
@@ -43,66 +43,51 @@ class Alice:
         print('Alice\'s ciphertext has been written to x.txt')
 
     def verify_ciphertext(self):
+
         egg=pair(self.GP['g'],self.GP['g'])
         CT_BOB=newjson.loads(open("y.txt","r").read())["ct"]
-        asserttime = {"C0":0,"C1":0,"C2":0,"C3":0}
-        t1=time.time()
-        assert(CT_BOB["C0p"] == CT_BOB["M1"]*(egg**CT_BOB["stilde"]) *(CT_BOB["C0"]**CT_BOB["cp"]))
-        asserttime["C0"] = time.time() - t1
-        
-        t1=time.time()
-        # print(Dp, gp['g']** M2, D** cp2)
-        assert(CT_BOB["Dp"] == (self.GP['g']** CT_BOB["M2"]) * (CT_BOB["D"]** CT_BOB["cp2"]))
-        asserttime["D"] = time.time() - t1
-        policy = self.dabe.util.createPolicy(CT_BOB["policy"])
-        
-        # policy = self.dabe.util.createPolicy(policy_str)
-        for attr, s_share in CT_BOB["secret_shareshat"].items():
-            k_attr = self.dabe.util.strip_index(attr)
-            t1 = time.time()
-            assert(CT_BOB["C1p"][attr]==egg**CT_BOB["secret_shareshat"][attr] * self.GP["pks"][k_attr]['egga']**CT_BOB["rxhat"][attr]  * CT_BOB["C1"][attr]**CT_BOB["cp"])
-            asserttime["C1"]+= time.time()-t1
-            t1 = time.time()
-            assert (CT_BOB["C2p"][attr] == self.GP['g'] ** CT_BOB["rxhat"][attr] * CT_BOB["C2"][attr] ** CT_BOB["cp"])
-            asserttime["C2"] +=  time.time()-t1
-            t1 = time.time()
-            assert (CT_BOB["C3p"][attr] == self.GP["pks"][k_attr]['gy'] ** CT_BOB["rxhat"][attr] * self.GP['g'] **CT_BOB["zero_shareshat"][attr]  *CT_BOB["C3"][attr]**CT_BOB["cp"])
-            asserttime["C3"] +=  time.time()-t1
-        # print(asserttime)
-        # allTime=0
-        # for part in asserttime:
-        #     allTime+=asserttime[part]
-        # print(allTime)    
-        return True
+        return self.dabe.isValid(CT_BOB, self.GP,self.GP["pks"])
+        # return True
 
     def getDHKey(self):
         gt=eval(str(newjson.loads(open("x.txt","r").read())["m"]))
         D=newjson.loads(open("y.txt","r").read())["ct"]["D"]
         return (D**gt[0])**gt[1]
+    
+    def ElgamalEnc(self, K, pk):
+        l=self.groupObj.random()
+        # print(K["K"]pk**l)
+        EK1=K["K"]* (pk**l)
+        EK2=self.GP['g']**l
+        EK3=K["KP"]
+        return {"EK1":EK1,"EK2":EK2,"EK3":EK3}
+
+    def ElgamalDec(self, EK, sk):        
+        return {"K":EK["EK1"]/(EK["EK2"]**sk),"KP":EK["EK3"]}
+
+
 
     def send_decryptionkey(self):
-        gid, K = "EXid", {}
-        self.dabe.keygen(self.GP, self.sks["ALICE"], "ALICE", gid, K)
-        # TODO interestingly: g1**gt[0]**gt2[0] == g1**gt2[0]**gt[0]
-        #               and   g1**gt[1]**gt2[1] == g1**gt2[1]**gt[1]
-        # so DH exchange key is set as: g1**gt[0]**gt2[0]**gt[1]**gt2[1]
-        # print(self.getDHKey())
-        K['ALICE']['k'] = K['ALICE']['k']*self.getDHKey()
+        gid, abeKey = "EXid", {}
+        abeKey["ALICE"] = self.dabe.keygen(self.GP, self.sks["ALICE"], gid, "ATTR@ALICE")
 
-        open("K_ALICE.txt","w").write(newjson.dumps(K))
-        print("Alice sends decryption key using DH exchange")
+        encKey=self.ElgamalEnc(abeKey['ALICE'],self.pks["BOB"]["gz"])
+        open("K_ALICE.txt","w").write(newjson.dumps(encKey))
+        print("Alice sends decryption key using ElGamal encryption")
     
     def decrypt_CT(self):        
-        K=newjson.loads(open("K_ALICE.txt","r").read())        
-        K['ALICE']['k']=K['ALICE']['k']/self.getDHKey()
-        BOBK=newjson.loads(open("K_BOB.txt","r").read())
-        BOBK['BOB']['k']=BOBK['BOB']['k']/self.getDHKey()
-        # print('BOB decryption Key:',BOBK['BOB']['k'])
-        K.update(BOBK)        
+        decKey = {'GID': "EXid", 'keys': {}}
+        BOBEK=newjson.loads(open("K_BOB.txt","r").read())        
+        BOBK=self.ElgamalDec(BOBEK,self.sks["ALICE"]["z"])
+        # print(BOBK)
+        ALICEK = self.dabe.keygen(self.GP, self.sks["ALICE"], decKey["GID"], "ATTR@ALICE")
+        
+        decKey['keys']["ATTR@BOB"]=BOBK
+        decKey['keys']["ATTR@ALICE"]=ALICEK
         CT_BOB=newjson.loads(open("y.txt","r").read())["ct"]
-        #this is used to compare
         m_BOB=newjson.loads(open("y.txt","r").read())["m"]
-        y = self.dabe.decrypt(self.GP, K, CT_BOB)
+
+        y = self.dabe.decrypt(self.GP, decKey, CT_BOB)
         assert(y==m_BOB)
         return True
 
@@ -113,7 +98,7 @@ if __name__ == '__main__':
     print()
     print('Commands:')
     print(' [1] Publish Ciphertext of secret x      [2] Verify ciphertext of y')    
-    print(' [3] Transfer decryption key             [4] Decrypt the Ciphertext to get x')    
+    print(' [3] Transfer decryption key             [4] Decrypt the Ciphertext to get y')    
 
     print()
     alice = Alice()
