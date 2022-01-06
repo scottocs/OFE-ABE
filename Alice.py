@@ -120,4 +120,4 @@ if __name__ == '__main__':
             print('Quitting.\n')
             break
         else:
-            print('Invalid choice. Valid chocices are 0 to 2.\n')
+            print('Invalid choice. Valid chocices are 0 to 4.\n')

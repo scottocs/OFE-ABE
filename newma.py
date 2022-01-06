@@ -670,6 +670,11 @@ def main(n,res={"C0":[],"C1":[],"C2":[],"C3":[],"D":[]}):
     assert m == orig_m, 'FAILED Decryption!!!'
     print('Successful Decryption!')
     return 
+
+def getRandom(n):
+    import random
+    return int(random.random()*n)
+    # return p
 def pedersenCommitAndhExpM():
     groupObj = PairingGroup('SS512')
     gp={
@@ -679,40 +684,25 @@ def pedersenCommitAndhExpM():
     dabe = Dabe(groupObj)
     m=groupObj.random()
     M=groupObj.random(GT)
-    r=groupObj.random()
     Mp=groupObj.random(GT)
-    rp=groupObj.random()
+    
     curve_order =  groupObj.order()
-    # print(curve_order)
-    Mpv=eval(str(Mp))[0]
-    Mv=eval(str(M))[0]
-    cp2 = groupObj.init(ZR,int(hash2(str(M) + "||" + str(Mp) ), 16) )#% curve_order
     from gmpy2 import c_mod, mpz,mul
     
-    D=gp['g']**eval(str(Mv))*gp['h']**r
-    Dp=gp['g']**eval(str(Mpv))*gp['h']**rp
-    # print(int(curve_order))
-    R=rp-r*cp2
-    M2= mpz(str(curve_order)) + c_mod(mpz(Mpv)- mul(mpz(Mv),mpz(str(cp2))), mpz(str(curve_order)))
-    M2=eval(str(M2))
-    # asserttime = {"C0":0,"C1":0,"C2":0,"C3":0}
-    # t1=time.time()
-    # assert(C0p == M1*(egg**stilde) *(C0**cp))
-    # asserttime["C0"] = time.time() - t1
-    # res["C0"].append(asserttime["C0"])
-    # t1=time.time()
-    # print(Dp, gp['g']** M2, D** cp2)
-    assert(Dp == (gp['g']** M2 * gp['h']**R) * (D** cp2))
-    
-    field_modulus = mpz("8780710799663312522437781984754049815806883199414208211028653399266475630880222957078625179422662221423155858769582317459277713367317481324925129998224791")
-    # print(pair(gp['g'],gp['g']))
-    # Mhat = 
-    c=mpz(eval(str(Mp))[0])-mpz(eval(str(M))[0]) 
-    c=eval(str(c))
-    #different with BN128: curve_order -> field_modulus-1
-    quotient=eval(str(c-mpz(eval(str(Mp/M))[0])//field_modulus))%curve_order
-    assert(gp['g']**eval(str(Mpv)) == gp['g']**eval(str(Mv)) * gp['g']**quotient)
-    print("calculation of h^M true, where h in G1, M in GT")
+
+    # print(curve_order)
+    for i in range(0, len(eval(str(Mp)))):            
+        #different with BN128: curve_order -> field_modulus-1        
+        Mpv=eval(str(Mp))[i]%curve_order
+        Mv=eval(str(M))[i]%curve_order
+        cp2 = eval(str(groupObj.init(ZR,int(hash2(str(M) + "||" + str(Mp) ), 16) )))% curve_order
+        
+        D=gp['g']**Mv
+        Dp=gp['g']**Mpv
+        M2=(Mpv-cp2*Mv) % curve_order
+        assert(Dp == (gp['g']** M2) * (D** cp2))
+                
+        print("calculation of h^M["+str(i)+"] true, where h in G1, M in GT")
     # print(c,type(c))
     # print(Mp/M)
     # d=mpz(eval(str(Mhat))[0])
