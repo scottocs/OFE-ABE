@@ -692,7 +692,7 @@ def pedersenCommitAndhExpM():
 
     # print(curve_order)
     for i in range(0, len(eval(str(Mp)))):            
-        #different with BN128: curve_order -> field_modulus-1        
+        #different with BN128: curve_order -> (FQ) field_modulus-1        
         Mpv=eval(str(Mp))[i]%curve_order
         Mv=eval(str(M))[i]%curve_order
         cp2 = eval(str(groupObj.init(ZR,int(hash2(str(M) + "||" + str(Mp) ), 16) )))% curve_order

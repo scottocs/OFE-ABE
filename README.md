@@ -20,8 +20,8 @@ ExternalUser.py: an external user (optional) who can verify all public informati
 	1. open two terminal windows.
     2. run "python3 Alice.py 100" and "python3 Bob.py 100" in each terminal.
     3. accomplish the exchange protocol step by step.
-    4. result:
-    ![Demo](./images/demo.gif)
+    4. result:    
+        ![demo](images/demo.gif)
     5. (optional) through running "python3 ExternalUser.py", an external user can verify all public information. 
 
 ## Note
