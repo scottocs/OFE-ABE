@@ -30,7 +30,7 @@ class Alice:
         
 
     def send_ciphertext(self):
-        m = self.groupObj.random(GT)
+        m = self.groupObj.random(ZR)
         nattributes = ["ATTR@AUTH"+str(j) for j in range(1, self.n+1)]
         policy = '(2 of (%d of (%s), ATTR@ALICE, ATTR@BOB))' % (self.n/2+1, ", ".join(nattributes))
         # print(policy)
@@ -85,7 +85,7 @@ class Alice:
         decKey['keys']["ATTR@BOB"]=BOBK
         decKey['keys']["ATTR@ALICE"]=ALICEK
         CT_BOB=newjson.loads(open("y.txt","r").read())["ct"]
-        m_BOB=newjson.loads(open("y.txt","r").read())["m"]
+        m_BOB=pair(self.GP['g'],self.GP['g']) ** newjson.loads(open("y.txt","r").read())["m"]
 
         y = self.dabe.decrypt(self.GP, decKey, CT_BOB)
         assert(y==m_BOB)

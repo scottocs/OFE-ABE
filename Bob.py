@@ -12,7 +12,6 @@ import threading
 debug = False
 import newma
 import sys
-import util
 
 class Bob:
     def __init__(self):
@@ -31,7 +30,7 @@ class Bob:
         
 
     def send_ciphertext(self):
-        m = self.groupObj.random(GT)
+        m = self.groupObj.random(ZR)
         nattributes = ["ATTR@AUTH"+str(j) for j in range(1, self.n+1)]
         policy = '(2 of (%d of (%s), ATTR@ALICE, ATTR@BOB))' % (self.n/2+1, ", ".join(nattributes))
         # print(policy)
@@ -84,8 +83,8 @@ class Bob:
         
         decKey['keys']["ATTR@ALICE"]=ALICEK
         decKey['keys']["ATTR@BOB"]=BOBK
-        CT_ALICE=newjson.loads(open("x.txt","r").read())["ct"]
-        m_ALICE=newjson.loads(open("x.txt","r").read())["m"]
+        CT_ALICE=newjson.loads(open("x.txt","r").read())["ct"]        
+        m_ALICE=pair(self.GP['g'],self.GP['g'])  ** newjson.loads(open("x.txt","r").read())["m"]
 
         y = self.dabe.decrypt(self.GP, decKey, CT_ALICE)
         assert(y==m_ALICE)

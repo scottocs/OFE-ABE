@@ -36,8 +36,9 @@ class Dabe(ABEncMultiAuth):
     def setup(self):
         g1 = self.group.random(G1)
         g2 = g1#self.group.random(G2)
+        h = self.group.random(G1)
         egg = pair(g1, g2)
-        gp = {'g':g1,'g1': g1, 'g2': g2, 'egg': egg}
+        gp = {'g':g1,'g1': g1,'h':h, 'g2': g2, 'egg': egg}
         if debug:
             print("Setup")
             print(gp)
@@ -119,17 +120,17 @@ class Dabe(ABEncMultiAuth):
             uk[attribute] = self.keygen(gp, sk, gid, attribute)
         return uk
 
-    def encrypt(self, gp, pks, message, policy_str):
+    def encrypt(self, gp, pks, m, policy_str):
         """
         Encrypt a message under an access policy
         :param gp: The global parameters.
         :param pks: The public keys of the relevant attribute authorities, as dict from authority name to public key.
-        :param message: The message to encrypt.
+        :param m: e(g,g)^m is to be encrypted.
         :param policy_str: The access policy to use.
         :return: The encrypted message.
         """
-        s = self.group.random()  # secret to be shared
-        sp = self.group.random()  # secret to be shared
+        s = self.group.random(ZR)  # secret to be shared
+        sp = self.group.random(ZR)  # secret to be shared
         w = self.group.init(ZR, 0)  # 0 to be shared
         wp = 0
 
@@ -141,22 +142,40 @@ class Dabe(ABEncMultiAuth):
 
         secret_sharesp = self.util.calculateSharesDict(sp, policy)  # These are correctly set to be exponents in Z_p
         zero_sharesp = self.util.calculateSharesDict(wp, policy)
-        M= message
-        C0 = message * (gp['egg'] ** s)
+        M= gp['egg']**m
+        C0 = [gp['g'],gp['g']**(m+s)]                 
+        C5=gp['h']**s
+        D=gp['h']**m
         C1, C2, C3, C4 = {}, {}, {}, {}
         C1p, C2p,C3p, C4p = {}, {}, {}, {}
         tx, txp = {}, {}
-        Mp=self.group.random(GT)
-        C0p = Mp  * (gp['egg'] ** sp)
+        
+
+        mp=self.group.random(ZR)
+        Mp=gp['egg']**mp
+        C0p = [gp['g'],gp['g']**(mp+sp)] 
+        C5p=gp['h']**sp
+        Dp=gp['h']**mp
         curve_order =  self.group.order()
         cp = self.group.init(ZR,int(hash2(str(C0) + "||" + str(C1) + "||" + str(C2) + "||" + str(C3) + "||" + str(C4)), 16) )#% curve_order
         stilde = (sp - s*cp)# %curve_order  # for egg
-        Mtilde = Mp/(M**cp)
-        # asserttime = {"C0":0,"C1":0,"C2":0,"C3":0,"C4":0}
-        # t1=time.time()
-        # assert(C0p == Mtilde*(gp['egg']**stilde) *(C0**cp))
-        # asserttime["C0"] = time.time() - t1
-        # print("C0_verificiation time",time.time()-t1)
+        mtilde = (mp - m*cp)# %curve_order  # for egg
+        asserttime = {"C0":0,"C1":0,"C2":0,"C3":0,"C4":0,"C5":0,"D":0,"pair":0}
+        t1=time.time()
+        assert(C0p[1] == (gp['g']**mtilde)*(gp['g']**stilde) *(C0[1]**cp))
+        asserttime["C0"] = time.time() - t1
+        t1 = time.time()
+        assert(C5p == (gp['h']**stilde)*(C5**cp))
+        asserttime["C5"] += time.time()-t1
+        t1 = time.time()
+        assert(Dp == (gp['h']**mtilde) *(D**cp))
+        asserttime["D"] += time.time()-t1
+
+        t1 = time.time()
+        assert(pair(C0[1],gp['h']) == pair(C5*D, gp['g']))
+        asserttime["pair"] += time.time()-t1
+
+
         txhat, secret_shareshat, zero_shareshat = {}, {}, {}
 
         for i in attribute_list:
@@ -178,20 +197,22 @@ class Dabe(ABEncMultiAuth):
             secret_shareshat[i] = (secret_sharesp[i] - cp * secret_shares[i]) #% curve_order
             zero_shareshat[i] = (zero_sharesp[i] - cp * zero_shares[i]) #% curve_order
 
-            # t1 = time.time()
-            # assert(C1p[i]==gp['egg']**secret_shareshat[i] * pks[auth]['egga']**txhat[i]  * C1[i]**cp)
-            # asserttime["C1"]+= time.time()-t1
-            # t1 = time.time()
-            # assert (C2p[i] == gp['g1'] ** (-txhat[i]) * C2[i] ** cp)
-            # asserttime["C2"] +=  time.time()-t1
-            # t1 = time.time()
-            # assert (C3p[i] == pks[auth]['gy'] ** txhat[i] * gp['g1'] **zero_shareshat[i]  *C3[i]**cp)
-            # asserttime["C3"] +=  time.time()-t1
-            # t1 = time.time()
-            # assert (C4p[i] == gp['F'](attr) ** txhat[i] * C4[i] ** cp)
-            # asserttime["C4"] += time.time()-t1
+            t1 = time.time()
+            assert(C1p[i]==gp['egg']**secret_shareshat[i] * pks[auth]['egga']**txhat[i]  * C1[i]**cp)
+            asserttime["C1"]+= time.time()-t1
+            t1 = time.time()
+            assert (C2p[i] == gp['g1'] ** (-txhat[i]) * C2[i] ** cp)
+            asserttime["C2"] +=  time.time()-t1
+            t1 = time.time()
+            assert (C3p[i] == pks[auth]['gy'] ** txhat[i] * gp['g1'] **zero_shareshat[i]  *C3[i]**cp)
+            asserttime["C3"] +=  time.time()-t1
+            t1 = time.time()
+            assert (C4p[i] == self.F(attr) ** txhat[i] * C4[i] ** cp)
+            asserttime["C4"] += time.time()-t1
 
-        # print("asserttime",asserttime)
+
+
+        print("asserttime",asserttime)
         # c = self.group.init(ZR,int(hash(str(C0) + "||" + str(C1) + "||" + str(C2) + "||" + str(C3) + "||" + str(C4)), 16))# % curve_order
 
         if debug:
@@ -200,14 +221,14 @@ class Dabe(ABEncMultiAuth):
             print({'policy': policy_str, 'C0': C0, 'C1': C1, 'C2': C2, 'C3': C3, 'C4': C4})
         # return {'policy': policy_str, 'C0': C0, 'C1': C1, 'C2': C2, 'C3': C3, 'C4': C4}
 
-        return {'policy': policy_str, 'C0': C0, 'C1': C1, 'C2': C2, 'C3': C3, 'C4': C4, \
-         'C0p': C0p, 'C1p': C1p, 'C2p': C2p, 'C3p': C3p,'C4p': C4p, \
+        return {'policy': policy_str, 'C0': C0, 'C1': C1, 'C2': C2, 'C3': C3, 'C4': C4,'C5':C5,'D':D,\
+         'C0p': C0p, 'C1p': C1p, 'C2p': C2p, 'C3p': C3p,'C4p': C4p,'C5p':C5p,'Dp':Dp, \
          "txhat": txhat,
          "secret_shareshat": secret_shareshat,
          "zero_shareshat": zero_shareshat,
          "cp": cp,
          "stilde": stilde,
-         "Mtilde": Mtilde,
+         "mtilde": mtilde,
          }
     def divideCT(self, ct1, ct2):
         ct={}
@@ -231,10 +252,12 @@ class Dabe(ABEncMultiAuth):
         return {'policy': policy_str, 'C0': C0, 'C1': C1, 'C2': C2, 'C3': C3, 'C4': C4}
     def isValid(self, com, gp, pks):
         C0p = com["C0p"]
-        Mtilde = com["Mtilde"]
+        mtilde = com["mtilde"]
         policy_str = com["policy"]
         stilde = com["stilde"]
         C0 = com["C0"]
+        C5 = com["C5"]
+        D = com["D"]
         cp = com["cp"]
         C1p = com["C1p"]
         secret_shareshat = com["secret_shareshat"]
@@ -247,14 +270,26 @@ class Dabe(ABEncMultiAuth):
         C3 = com["C3"]
         C4 = com["C4"]
         C4p = com["C4p"]
+        C5p = com["C5p"]
+        Dp = com["Dp"]
 
         policy = self.util.createPolicy(policy_str)
         attribute_list = self.util.getAttributeList(policy)
 
-        asserttime = {"C0": 0, "C1": 0, "C2": 0, "C3": 0, "C4": 0,"Hash":0}
+        asserttime = {"C0": 0, "C1": 0, "C2": 0, "C3": 0, "C4": 0,"C5": 0,"D": 0,"Hash":0}
         t1=time.time()
-        assert (C0p == Mtilde * (gp['egg'] ** stilde) * (C0 ** cp))
+        # assert (C0p == Mtilde * (gp['egg'] ** stilde) * (C0 ** cp))
+        assert(C0p[1] == (gp['g']**mtilde)*(gp['g']**stilde) *(C0[1]**cp))
         asserttime["C0"] = time.time()-t1
+
+        t1 = time.time()
+        assert(C5p == (gp['h']**stilde)*(C5**cp))
+        asserttime["C5"] += time.time()-t1
+        t1 = time.time()
+        assert(Dp == (gp['h']**mtilde) *(D**cp))
+        asserttime["D"] += time.time()-t1
+
+
         for i in attribute_list:
             attribute_name, auth, _ = self.unpack_attribute(i)
             attr = "%s@%s" % (attribute_name, auth)
@@ -304,8 +339,8 @@ class Dabe(ABEncMultiAuth):
             print("SK:")
             print(sk)
             print("Decrypted Message:")
-            print(ct['C0'] / B)
-        return ct['C0'] / B
+            print(pair(ct['C0'][0],ct['C0'][1]) / B)
+        return pair(ct['C0'][0],ct['C0'][1])/B
 
 def main(n,res={"C0":[],"C1":[],"C2":[],"C3":[],"D":[]}):
     groupObj = PairingGroup('SS512')
@@ -404,7 +439,7 @@ def main(n,res={"C0":[],"C1":[],"C2":[],"C3":[],"D":[]}):
     if debug: groupObj.debug(K)
 
     #Encrypt a random element in GT
-    m = groupObj.random(GT)
+    m = groupObj.random(ZR)
     # policy = '(2 of (ATTR1, ATTR2, ATTR4))'#'((ATTR1 or ATTR3) and (ATTR2 or ATTR4))'
     nattributes = ["ATTR@AUTH"+str(j) for j in range(1, n+1)]
     policy = '(%d of (%s))' % (t, ", ".join(nattributes))
@@ -423,7 +458,7 @@ def main(n,res={"C0":[],"C1":[],"C2":[],"C3":[],"D":[]}):
     orig_m = dabe.decrypt(GP, decKey, CT)
     # print("decryption time",time.time()-ts)
 
-    assert m == orig_m, 'FAILED Decryption!!!'
+    assert GP["egg"]**m == orig_m, 'FAILED Decryption!!!'
     print('Successful Decryption!')
     return 
 
@@ -431,50 +466,50 @@ def getRandom(n):
     import random
     return int(random.random()*n)
     # return p
-def commitDescription():
-    groupObj = PairingGroup('SS512')
+# def commitDescription():
+#     groupObj = PairingGroup('SS512')
 
-    starttime=time.time()
-    for i in range(0,100):
-        pair(groupObj.random(G1),groupObj.random(G2))
-    print("pairing time cost:",time.time()-starttime)
+#     starttime=time.time()
+#     for i in range(0,100):
+#         pair(groupObj.random(G1),groupObj.random(G2))
+#     print("pairing time cost:",time.time()-starttime)
 
-    starttime=time.time()
-    for i in range(0,100):
-        groupObj.random(G1)** groupObj.random(ZR)
-    print("exponentiation time cost:",time.time()-starttime)
+#     starttime=time.time()
+#     for i in range(0,100):
+#         groupObj.random(G1)** groupObj.random(ZR)
+#     print("exponentiation time cost:",time.time()-starttime)
     
-    gp={
-        "g":groupObj.random(G1),
-        "h":groupObj.random(G1)
-    }
-    dabe = Dabe(groupObj)
-    m=groupObj.random()
-    M=groupObj.random(GT)
-    Mp=groupObj.random(GT)
+#     gp={
+#         "g":groupObj.random(G1),
+#         "h":groupObj.random(G1)
+#     }
+#     dabe = Dabe(groupObj)
+#     m=groupObj.random()
+#     M=groupObj.random(GT)
+#     Mp=groupObj.random(GT)
     
-    curve_order =  groupObj.order()
-    from gmpy2 import c_mod, mpz,mul
+#     curve_order =  groupObj.order()
+#     from gmpy2 import c_mod, mpz,mul
     
 
-    # print(curve_order)
-    for i in range(0, len(eval(str(Mp)))):            
-        #different with BN128: curve_order -> (FQ) field_modulus-1        
-        Mpv=eval(str(Mp))[i]%curve_order
-        Mv=eval(str(M))[i]%curve_order
-        cp2 = eval(str(groupObj.init(ZR,int(hash2(str(M) + "||" + str(Mp) ), 16) )))% curve_order
+#     # print(curve_order)
+#     for i in range(0, len(eval(str(Mp)))):            
+#         #different with BN128: curve_order -> (FQ) field_modulus-1        
+#         Mpv=eval(str(Mp))[i]%curve_order
+#         Mv=eval(str(M))[i]%curve_order
+#         cp2 = eval(str(groupObj.init(ZR,int(hash2(str(M) + "||" + str(Mp) ), 16) )))% curve_order
         
-        D=gp['g']**Mv
-        Dp=gp['g']**Mpv
-        M2=(Mpv-cp2*Mv) % curve_order
-        assert(Dp == (gp['g']** M2) * (D** cp2))
+#         D=gp['g']**Mv
+#         Dp=gp['g']**Mpv
+#         M2=(Mpv-cp2*Mv) % curve_order
+#         assert(Dp == (gp['g']** M2) * (D** cp2))
                 
-        print("calculation of h^M["+str(i)+"] true, where h in G1, M in GT")
-    # print(c,type(c))
-    # print(Mp/M)
-    # d=mpz(eval(str(Mhat))[0])
-    # d=eval(str(d))
-    # print(d,type(d))
+#         print("calculation of h^M["+str(i)+"] true, where h in G1, M in GT")
+#     # print(c,type(c))
+#     # print(Mp/M)
+#     # d=mpz(eval(str(Mhat))[0])
+#     # d=eval(str(d))
+#     # print(d,type(d))
     
     
 
@@ -492,5 +527,5 @@ if __name__ == '__main__':
     #         # print(item,sum(res[item])/len(res[item]))
     #         priRes[item].append((n,sum(res[item])/len(res[item])))
     # print(priRes)
-    commitDescription()
+    # commitDescription()
     main(int(sys.argv[1]),)
