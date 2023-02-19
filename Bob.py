@@ -21,7 +21,7 @@ class Bob:
         self.pks={}
         self.sks={}
         
-
+        
         self.GP= newjson.loads(open("global_parameters.json","r").read())        
         self.n=self.GP["n"]
         self.t=int(self.n/2+1)

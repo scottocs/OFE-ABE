@@ -12,6 +12,7 @@ import threading
 debug = False
 import newma
 import sys
+import setting
 
 class Alice:
     def __init__(self):
@@ -21,7 +22,7 @@ class Alice:
         self.pks={}
         self.sks={}
         
-
+        
         self.GP= newjson.loads(open("global_parameters.json","r").read())        
         self.n=self.GP["n"]
         self.t=int(self.n/2+1)
@@ -102,7 +103,10 @@ if __name__ == '__main__':
 
     print()
     alice = Alice()
-    alice.n=int(sys.argv[1])
+    N = setting.N
+    t=setting.t
+
+    alice.n=N
     while True:
         choice = int(input('Enter your choice: '))
         if choice == 1:

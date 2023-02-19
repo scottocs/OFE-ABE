@@ -11,6 +11,7 @@ import time
 import threading
 debug = False
 import sys
+import setting,os
 
 import hashlib
 def hash(str):
@@ -276,7 +277,8 @@ class Dabe(ABEncMultiAuth):
         policy = self.util.createPolicy(policy_str)
         attribute_list = self.util.getAttributeList(policy)
 
-        asserttime = {"C0": 0, "C1": 0, "C2": 0, "C3": 0, "C4": 0,"C5": 0,"D": 0,"Hash":0}
+        asserttime = {"C0": 0, "C1": 0, "C2": 0, "C3": 0, "C4": 0,"C5": 0,"D": 0,"Hash":0,"all":0}
+        ts=time.time()
         t1=time.time()
         # assert (C0p == Mtilde * (gp['egg'] ** stilde) * (C0 ** cp))
         assert(C0p[1] == (gp['g']**mtilde)*(gp['g']**stilde) *(C0[1]**cp))
@@ -308,8 +310,8 @@ class Dabe(ABEncMultiAuth):
             assert (C4p[i] == hashv ** txhat[i] * C4[i] ** cp)
             asserttime["C4"] += time.time() - t1
 
-
-        # print("asserttime",asserttime)
+        asserttime["all"]= time.time() - ts
+        print("asserttime",asserttime)
         return True
     def decrypt(self, gp, sk, ct):
         """
@@ -342,7 +344,7 @@ class Dabe(ABEncMultiAuth):
             print(pair(ct['C0'][0],ct['C0'][1]) / B)
         return pair(ct['C0'][0],ct['C0'][1])/B
 
-def main(n,res={"C0":[],"C1":[],"C2":[],"C3":[],"D":[]}):
+def main(n,t,res={"C0":[],"C1":[],"C2":[],"C3":[],"D":[]}):
     groupObj = PairingGroup('SS512')
 
     dabe = Dabe(groupObj)
@@ -392,9 +394,10 @@ def main(n,res={"C0":[],"C1":[],"C2":[],"C3":[],"D":[]}):
     GP={}
     pks={}
     sks={}
-    t=int(n/2+1)
+    # t=int(n/2+1)
 
     # GP = dabe.setup()   
+    os.system("rm -rf global_parameters.json")
     try:
         GP= newjson.loads(open("global_parameters.json","r").read())        
         pks=GP["pks"]
@@ -528,4 +531,7 @@ if __name__ == '__main__':
     #         priRes[item].append((n,sum(res[item])/len(res[item])))
     # print(priRes)
     # commitDescription()
-    main(int(sys.argv[1]),)
+    N = setting.N
+    t=setting.t
+
+    main(N,t)

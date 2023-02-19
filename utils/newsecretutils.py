@@ -36,6 +36,19 @@ class Utils:
             shares = [Pfunc(a, i) for i in range(0, n + 1)]
         return shares
 
+    def genShares2(self, secret, k, n):
+        if (k <= n):
+            rand = self.group.random
+            a = []  # will hold polynomial coefficients
+            for i in range(0, k):
+                if (i == 0):
+                    a.append(secret)  # a[0]
+                else:
+                    a.append(rand(ZR))
+            Pfunc = self.P
+            shares = [Pfunc(a, i) for i in range(0, n + 1)]
+        return shares,a
+
     # shares is a dictionary
     def recoverCoefficients(self, list):
         """recovers the coefficients over a binary tree."""
