@@ -1,7 +1,9 @@
-# File structure
-newma.py: Lewko and Waters's decentralized CP-ABE with sigma protocol
-Lewko and Waters's CP-ABE does not provide long-term key pairs, however, Rouselakis and Waters's Efficient Statically-Secure Large-Universe Multi-Authority Attribute-Based Encryption provides.
-it's easy to rewrite newma.py
+# File structure 
+A publicly verifiable optimistic fair exchange protocol using decentralized CP-ABE
+
+newma.py: decentralized CP-ABE with sigma protocol 
+Fair exchange protocol based on Rouselakis and Waters's Efficient Statically-Secure Large-Universe Multi-Authority Attribute-Based Encryption.
+
 
 Alice.py: the player Alice
 
